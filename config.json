@@ -1,0 +1,11 @@
+{
+  "model": {
+    "sentiment": "distilbert-base-uncased-finetuned-sst-2-english",
+    "embedding": "all-MiniLM-L6-v2"
+  },
+  "chroma": {
+    "host": "chroma-db", 
+    "port": 8000,         
+    "collection_name": "sentiment_embeddings"
+  }
+}

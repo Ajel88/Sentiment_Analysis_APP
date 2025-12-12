@@ -1,0 +1,43 @@
+services:
+  chroma-db:
+    image: chromadb/chroma:latest
+    container_name: sentiment-chroma-db
+    ports:
+      - "8001:8000"  # Host:Container port mapping
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - ALLOW_RESET=TRUE
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+    restart: unless-stopped
+    networks:
+      - sentiment-network
+
+  ml-app:
+    build: .
+    container_name: sentiment-ml-app
+    ports:
+      - "7860:7860"
+    volumes:
+      - ./:/app
+    environment:
+      # CHANGE THIS: Use service name instead of localhost
+      - CHROMA_HOST=chroma-db  # Docker service name
+      - CHROMA_PORT=8000       # Container port (not host port)
+      - MODEL_NAME=distilbert-base-uncased-finetuned-sst-2-english
+      - EMBEDDING_MODEL=all-MiniLM-L6-v2
+      - LOG_LEVEL=INFO
+    depends_on:
+      - chroma-db
+    restart: unless-stopped
+    networks:
+      - sentiment-network
+
+networks:
+  sentiment-network:
+    driver: bridge
+
+volumes:
+  chroma_data:
+    driver: local
