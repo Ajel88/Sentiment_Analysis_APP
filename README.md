@@ -14,8 +14,22 @@ A complete containerized NLP application featuring transformer-based sentiment a
 ## Architecture
 
 ## how to Run
+First go Powershel
+    docker ps 
+    docker run -d -p 8001:8000 chromadb/chroma:latest   
     Test ChromaDB connection
     python test_chromadb.py
     then run main file
         python main.py
+
+## Final Running
+    # check all running containers
+        docker ps
+        docker stop containers_name
+    # Now start your app
+        docker-compose up
+        or
+        docker-compose up --build
+
+
 

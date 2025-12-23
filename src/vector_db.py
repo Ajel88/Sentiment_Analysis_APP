@@ -5,6 +5,7 @@ import uuid
 import numpy as np
 import time
 import logging
+import os  # ADD THIS IMPORT
 from .embedding_generator import EmbeddingResult
 
 logger = logging.getLogger(__name__)
@@ -12,23 +13,26 @@ logger = logging.getLogger(__name__)
 class VectorDatabase:
     """ChromaDB vector database manager with connection retry"""
     
-    def __init__(self, host: str = "localhost", port: int = 8001, 
+    def __init__(self, host: str = None, port: int = None, 
                  collection_name: str = "sentiment_embeddings"):
-        self.host = host
-        self.port = port
+        # GET FROM ENVIRONMENT VARIABLES OR USE PROVIDED VALUES
+        self.host = host or os.getenv("CHROMA_HOST", "chroma-db")  # FIXED
+        self.port = port or int(os.getenv("CHROMA_PORT", "8000"))  # FIXED: 8000 not 8001
         self.collection_name = collection_name
+        
+        logger.info(f"Attempting to connect to ChromaDB at {self.host}:{self.port}")
         
         # Connect with retry
         self.client = self._connect_with_retry()
         self.collection = self.get_or_create_collection()
         
-        logger.info(f"Successfully connected to ChromaDB at {host}:{port}")
+        logger.info(f"Successfully connected to ChromaDB at {self.host}:{self.port}")
     
-    def _connect_with_retry(self, max_retries: int = 5, delay: int = 2):
+    def _connect_with_retry(self, max_retries: int = 10, delay: int = 5):  # Increased retries
         """Connect to ChromaDB with retry logic"""
         for attempt in range(max_retries):
             try:
-                logger.info(f"Attempting to connect to ChromaDB (attempt {attempt + 1}/{max_retries})...")
+                logger.info(f"Attempt {attempt + 1}/{max_retries}: Connecting to {self.host}:{self.port}")
                 client = chromadb.HttpClient(
                     host=self.host,
                     port=self.port,
@@ -38,7 +42,8 @@ class VectorDatabase:
                     )
                 )
                 # Test connection
-                client.heartbeat()
+                heartbeat = client.heartbeat()
+                logger.info(f"Connection successful! Heartbeat: {heartbeat}")
                 return client
             except Exception as e:
                 logger.warning(f"Connection attempt {attempt + 1} failed: {e}")
@@ -47,10 +52,26 @@ class VectorDatabase:
                     time.sleep(delay)
                 else:
                     logger.error(f"Failed to connect to ChromaDB after {max_retries} attempts")
-                    logger.info("Please ensure ChromaDB is running:")
-                    logger.info("1. Start ChromaDB: docker run -d -p 8001:8000 chromadb/chroma:latest")
-                    logger.info("2. Or use Docker Compose: docker-compose up")
-                    raise ConnectionError(f"Could not connect to ChromaDB at {self.host}:{self.port}")
+                    logger.info("Trying alternative connection methods...")
+                    
+                    # Try alternative hostnames
+                    alternative_hosts = ["chroma-db", "localhost", "host.docker.internal"]
+                    for alt_host in alternative_hosts:
+                        try:
+                            logger.info(f"Trying alternative host: {alt_host}")
+                            client = chromadb.HttpClient(
+                                host=alt_host,
+                                port=self.port,
+                                settings=Settings(allow_reset=True)
+                            )
+                            client.heartbeat()
+                            self.host = alt_host  # Update host
+                            logger.info(f"Connected using alternative host: {alt_host}")
+                            return client
+                        except Exception as alt_e:
+                            logger.debug(f"Alternative {alt_host} also failed: {alt_e}")
+                    
+                    raise ConnectionError(f"Could not connect to ChromaDB at {self.host}:{self.port} or any alternative")
     
     def get_or_create_collection(self):
         """Get existing collection or create new one"""

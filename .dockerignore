@@ -1,0 +1,51 @@
+# .dockerignore
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# Data - exclude large files but keep structure
+data/*.csv
+data/*.pkl
+models/*.pth
+*.pkl
+*.pth
+*.h5
+
+# Logs
+logs/*.log
+*.log
+
+# Temporary
+tmp/
+temp/
+
+# Environment files (except example)
+.env
+*.env.local

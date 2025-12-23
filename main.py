@@ -729,6 +729,7 @@ def main():
     parser.add_argument("--no-chroma", action="store_true", 
                        help="Run without ChromaDB (not recommended)")
     
+    
     args = parser.parse_args()
     
     # Check if ChromaDB should be disabled

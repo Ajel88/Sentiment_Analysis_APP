@@ -4,8 +4,8 @@
     "embedding": "all-MiniLM-L6-v2"
   },
   "chroma": {
-    "host": "chroma-db", 
-    "port": 8000,         
+    "host": "chroma-db",
+    "port": 8000,
     "collection_name": "sentiment_embeddings"
   }
 }

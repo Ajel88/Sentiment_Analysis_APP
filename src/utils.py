@@ -9,19 +9,20 @@ import nltk
 
 def setup_logging():
     """Configure logging with loguru"""
+    # Setup NLTK quietly
+    try:
+        nltk.download('punkt', quiet=True)
+        nltk.download('stopwords', quiet=True)
+        nltk.download('wordnet', quiet=True)
+        nltk.download('vader_lexicon', quiet=True)
+        logger.info("NLTK data ready")
+    except Exception as e:
+        logger.warning(f"NLTK note: {e}")
+    
     # Remove default handler
     logger.remove()
     
-    # Add custom handlers
-    logger.add(
-        "logs/app.log",
-        rotation="500 MB",
-        retention="10 days",
-        level="INFO",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}"
-    )
-    
-    # Add console handler
+    # Add console handler only
     logger.add(
         lambda msg: print(msg, end=""),
         level="INFO",
@@ -38,40 +39,26 @@ def load_config(config_path: str = "config.json") -> Dict[str, Any]:
             "embedding": "all-MiniLM-L6-v2"
         },
         "chroma": {
-            "host": "localhost",
-            "port": 8001,
+            "host": "chroma-db",  # Docker service name
+            "port": 8000,         # Docker container port
             "collection_name": "sentiment_embeddings"
-        },
-        "preprocessing": {
-            "max_length": 512,
-            "truncation": True,
-            "padding": True
         }
     }
     
-    if os.path.exists(config_path):
-        try:
-            with open(config_path, 'r') as f:
-                user_config = json.load(f)
-            # Merge with default config
-            for key in default_config:
-                if key in user_config:
-                    default_config[key].update(user_config[key])
-            logger.info(f"Configuration loaded from {config_path}")
-        except Exception as e:
-            logger.warning(f"Error loading config: {e}. Using defaults.")
-    else:
-        logger.info("No config file found. Using default configuration.")
+    # ENVIRONMENT VARIABLES TAKE PRIORITY
+    chroma_host = os.getenv('CHROMA_HOST')
+    chroma_port = os.getenv('CHROMA_PORT')
+    
+    if chroma_host:
+        default_config['chroma']['host'] = chroma_host
+        logger.info(f"Using CHROMA_HOST from environment: {chroma_host}")
+    
+    if chroma_port:
+        default_config['chroma']['port'] = int(chroma_port)
+        logger.info(f"Using CHROMA_PORT from environment: {chroma_port}")
     
     return default_config
 
 def download_nltk_data():
     """Download required NLTK data"""
-    try:
-        nltk.data.find('tokenizers/punkt')
-        nltk.data.find('corpora/stopwords')
-    except LookupError:
-        logger.info("Downloading NLTK data...")
-        nltk.download('punkt', quiet=True)
-        nltk.download('stopwords', quiet=True)
-        logger.info("NLTK data downloaded successfully")
+    setup_logging()  # This will download NLTK
