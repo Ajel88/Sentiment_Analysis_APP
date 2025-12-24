@@ -30,6 +30,9 @@ First go Powershel
         docker-compose up
         or
         docker-compose up --build
-
+## Alternative method 
+    # Open docker then open vs code 
+    # Then go to containers to run Sentiment analysis
+    # It may take a while like 3-4 minutes to activate while you will see 3 contents running below the named app. This ml app 50c376bb68bc 7860-7860 click on it and it will direct you to your default browser and open the application 
 
 
